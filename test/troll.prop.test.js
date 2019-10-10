@@ -1,5 +1,6 @@
+const {elfArbitrary, trollArbitrary} = require("./generator");
+
 const fc = require('fast-check');
-const { trollArbitrary } = require('./generator');
 const Troll = require('../lib/troll');
 
 describe('Troll Invariance', () => {
@@ -12,19 +13,43 @@ describe('Troll Invariance', () => {
     );
   });
   test('Troll score should always be >= 0', () => {
-    /* Test go there */
+    fc.assert(fc.property(trollArbitrary(), troll => troll.scoring() >= 0));
   });
 });
 
 describe('Troll Inverse', () => {
   test('oopsHeSurvived should always be inverse of iGotOne', () => {
-    /* Test go there */
+    fc.assert(
+        fc.property(
+            trollArbitrary(),
+            elfArbitrary(),
+            (troll, elf) => {
+              const trollKillOne = Troll.iGotOne(elf)(troll);
+              const trollTheOops = Troll.oopsHeSurvived(elf)(trollKillOne);
+              return troll.scoring() === trollTheOops.scoring()
+            }
+        )
+    )
   });
 });
 
 describe('Troll Analogy', () => {
   test('iGotOne and iGot should be consistent', () => {
-    /* Test go there */
+    fc.assert(
+        fc.property(
+            trollArbitrary(),
+            elfArbitrary(),
+            (troll, elf) => {
+              const kills = fc.integer(1, 50);
+              let trollKillOneByOne = Troll.iGotOne(elf)(troll);
+              for(let i = 1; i < kills; i++) {
+                trollKillOneByOne = Troll.iGotOne(elf)(trollKillOneByOne);
+              }
+              const trollKillX = Troll.iGot(kills)(elf)(troll);
+              return trollKillOneByOne.scoring() === trollKillX.scoring()
+            }
+        )
+    )
   });
 });
 
